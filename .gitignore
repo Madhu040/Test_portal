@@ -22,6 +22,9 @@ yarn.lock
 .env.local
 .env.*.local
 
+# OAuth configuration with real credentials
+config/oauth-config.js
+
 # Build outputs
 dist/
 build/

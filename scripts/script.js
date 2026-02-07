@@ -243,45 +243,55 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Note: Google OAuth requires configuration in InstantDB dashboard
-            // See OAUTH_SETUP.md for complete setup instructions
+            // Check if Google OAuth is configured
+            const config = window.OAuthConfig?.google;
             
-            showAuthMessage('Google OAuth needs to be configured. See OAUTH_SETUP.md for instructions.', 'info');
-            
-            // Production implementation (uncomment after configuration):
-            /*
-            const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
-            
-            if (typeof google !== 'undefined' && google.accounts) {
-                google.accounts.id.initialize({
-                    client_id: GOOGLE_CLIENT_ID,
-                    callback: async (response) => {
-                        console.log('Google response received:', response);
-                        showAuthMessage('Signing in with Google...', 'info');
-                        
-                        try {
-                            const result = await Auth.signInWithGoogle(response.credential);
-                            if (result.success) {
-                                showAuthMessage('Login successful!', 'success');
-                                setTimeout(() => {
-                                    loginModal.classList.remove('active');
-                                    document.body.style.overflow = 'auto';
-                                    resetAuthForm();
-                                }, 1000);
-                            } else {
-                                showAuthMessage(result.error || 'Google login failed', 'error');
-                            }
-                        } catch (error) {
-                            console.error('Google auth error:', error);
-                            showAuthMessage('Error signing in with Google', 'error');
-                        }
-                    }
-                });
-                google.accounts.id.prompt();
-            } else {
-                showAuthMessage('Google Sign-In library not loaded', 'error');
+            if (!config || !config.enabled) {
+                showAuthMessage('Google OAuth not configured yet. See SIMPLE_OAUTH_SETUP.md', 'warning');
+                console.log('To enable: Edit config/oauth-config.js and set google.enabled = true');
+                return;
             }
-            */
+            
+            if (!config.clientId || config.clientId.includes('YOUR_')) {
+                showAuthMessage('Please add your Google Client ID to config/oauth-config.js', 'error');
+                return;
+            }
+            
+            // Initialize Google Sign-In
+            if (typeof google !== 'undefined' && google.accounts) {
+                try {
+                    google.accounts.id.initialize({
+                        client_id: config.clientId,
+                        callback: async (response) => {
+                            console.log('Google response received');
+                            showAuthMessage('Signing in with Google...', 'info');
+                            
+                            try {
+                                const result = await Auth.signInWithGoogle(response.credential);
+                                if (result.success) {
+                                    showAuthMessage('Login successful!', 'success');
+                                    setTimeout(() => {
+                                        loginModal.classList.remove('active');
+                                        document.body.style.overflow = 'auto';
+                                        resetAuthForm();
+                                    }, 1000);
+                                } else {
+                                    showAuthMessage(result.error || 'Google login failed', 'error');
+                                }
+                            } catch (error) {
+                                console.error('Google auth error:', error);
+                                showAuthMessage('Error signing in with Google: ' + error.message, 'error');
+                            }
+                        }
+                    });
+                    google.accounts.id.prompt();
+                } catch (error) {
+                    console.error('Google initialization error:', error);
+                    showAuthMessage('Failed to initialize Google Sign-In', 'error');
+                }
+            } else {
+                showAuthMessage('Google Sign-In library not loaded. Please refresh the page.', 'error');
+            }
         });
     }
 
@@ -296,26 +306,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Note: Apple Sign-In requires configuration in InstantDB dashboard
-            // See OAUTH_SETUP.md for complete setup instructions
+            // Check if Apple Sign-In is configured
+            const config = window.OAuthConfig?.apple;
             
-            showAuthMessage('Apple Sign-In needs to be configured. See OAUTH_SETUP.md for instructions.', 'info');
+            if (!config || !config.enabled) {
+                showAuthMessage('Apple Sign-In not configured yet. See SIMPLE_OAUTH_SETUP.md', 'warning');
+                console.log('To enable: Edit config/oauth-config.js and set apple.enabled = true');
+                return;
+            }
             
-            // Production implementation (uncomment after configuration):
-            /*
-            const APPLE_CLIENT_ID = 'com.landingpagem.web';
+            if (!config.clientId || config.clientId.includes('landingpagem')) {
+                showAuthMessage('Please add your Apple Service ID to config/oauth-config.js', 'error');
+                return;
+            }
             
+            // Initialize Apple Sign-In
             if (typeof AppleID !== 'undefined') {
                 try {
                     AppleID.auth.init({
-                        clientId: APPLE_CLIENT_ID,
+                        clientId: config.clientId,
                         scope: 'name email',
-                        redirectURI: window.location.origin + '/apple-callback',
+                        redirectURI: window.location.origin,
                         usePopup: true
                     });
                     
                     const response = await AppleID.auth.signIn();
-                    console.log('Apple response received:', response);
+                    console.log('Apple response received');
                     showAuthMessage('Signing in with Apple...', 'info');
                     
                     const result = await Auth.signInWithApple(response.authorization.id_token);
@@ -331,12 +347,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } catch (error) {
                     console.error('Apple auth error:', error);
-                    showAuthMessage('Error signing in with Apple', 'error');
+                    showAuthMessage('Error signing in with Apple: ' + error.message, 'error');
                 }
             } else {
-                showAuthMessage('Apple Sign-In library not loaded', 'error');
+                showAuthMessage('Apple Sign-In library not loaded. Please refresh the page.', 'error');
             }
-            */
         });
     }
 
