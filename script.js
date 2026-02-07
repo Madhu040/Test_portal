@@ -1,5 +1,129 @@
 // FAQ Accordion
 document.addEventListener('DOMContentLoaded', function() {
+    // Login Modal Functionality
+    const loginModal = document.getElementById('loginModal');
+    const loginBtn = document.getElementById('loginBtn');
+    const closeModal = document.getElementById('closeModal');
+    const emailLoginForm = document.getElementById('emailLoginForm');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const appleLoginBtn = document.getElementById('appleLoginBtn');
+
+    // Open login modal
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            loginModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    // Close modal when clicking X
+    if (closeModal) {
+        closeModal.addEventListener('click', function() {
+            loginModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        });
+    }
+
+    // Close modal when clicking outside
+    loginModal?.addEventListener('click', function(e) {
+        if (e.target === loginModal) {
+            loginModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && loginModal.classList.contains('active')) {
+            loginModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+    });
+
+    // Google Login Handler
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', function() {
+            console.log('Google login initiated');
+            // In production, this would trigger Google OAuth flow
+            // Example implementation:
+            /*
+            google.accounts.id.initialize({
+                client_id: 'YOUR_GOOGLE_CLIENT_ID',
+                callback: handleGoogleCallback
+            });
+            google.accounts.id.prompt();
+            */
+            alert('Google login would be initiated here.\n\nIn production, this requires:\n1. Google OAuth Client ID\n2. Proper OAuth configuration\n3. Backend authentication endpoint');
+        });
+    }
+
+    // Apple Login Handler
+    if (appleLoginBtn) {
+        appleLoginBtn.addEventListener('click', function() {
+            console.log('Apple login initiated');
+            // In production, this would trigger Apple Sign-In flow
+            // Example implementation:
+            /*
+            AppleID.auth.init({
+                clientId: 'YOUR_APPLE_CLIENT_ID',
+                scope: 'name email',
+                redirectURI: 'YOUR_REDIRECT_URI',
+                usePopup: true
+            });
+            AppleID.auth.signIn();
+            */
+            alert('Apple login would be initiated here.\n\nIn production, this requires:\n1. Apple Developer Account\n2. Service ID configuration\n3. Backend authentication endpoint');
+        });
+    }
+
+    // Email/Password Login Handler
+    if (emailLoginForm) {
+        emailLoginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
+            
+            console.log('Email login:', { email, remember });
+            
+            // In production, this would send credentials to your backend
+            // Example:
+            /*
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, remember })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Store token, redirect, etc.
+                    localStorage.setItem('authToken', data.token);
+                    window.location.href = '/dashboard';
+                }
+            });
+            */
+            
+            alert(`Demo: Login attempt with email: ${email}\n\nIn production, this would authenticate with your backend server.`);
+            
+            // Close modal after "login"
+            loginModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+            emailLoginForm.reset();
+        });
+    }
+
+    // Sign up link handler
+    const signupLink = document.getElementById('signupLink');
+    if (signupLink) {
+        signupLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Sign up functionality would be implemented here.\n\nThis could be:\n1. A separate sign-up modal\n2. A redirect to a sign-up page\n3. Converting the current modal to sign-up mode');
+        });
+    }
+
     const faqItems = document.querySelectorAll('.faq-item');
     
     faqItems.forEach(item => {
