@@ -63,6 +63,48 @@ document.addEventListener('DOMContentLoaded', function() {
     let userProfile = {};
 
     // Initialize auth state
+    async function initializeAuth() {
+        console.log('Initializing auth...');
+        
+        // Wait for Auth module
+        await waitForAuth();
+        
+        if (typeof Auth === 'undefined') {
+            console.error('Auth module not loaded');
+            return;
+        }
+        
+        console.log('Auth module ready, setting up listeners');
+        
+        // Set up auth state listener
+        if (Auth.onAuthStateChanged) {
+            Auth.onAuthStateChanged((user) => {
+                console.log('Auth state changed:', user);
+                updateUIForAuthState(user);
+            });
+        }
+        
+        // Check current auth state immediately
+        try {
+            const currentUser = Auth.getCurrentUser();
+            console.log('Current user on page load:', currentUser);
+            updateUIForAuthState(currentUser);
+        } catch (error) {
+            console.error('Error getting current user:', error);
+        }
+    }
+    
+    // Initialize when InstantDB is ready
+    window.addEventListener('instantdb-ready', () => {
+        console.log('InstantDB ready, initializing auth');
+        setTimeout(initializeAuth, 100);
+    });
+    
+    // Also try if already loaded
+    if (window.__instantdb_loaded) {
+        setTimeout(initializeAuth, 100);
+    }
+    
     function initAuthStateListener() {
         console.log('Initializing auth state listener');
         if (typeof Auth !== 'undefined' && Auth.onAuthStateChanged) {
@@ -99,15 +141,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Logout handler
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', async function() {
+        logoutBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            console.log('Logout button clicked');
+            
             try {
                 if (typeof Auth !== 'undefined') {
+                    console.log('Signing out...');
                     await Auth.signOut();
-                    showAuthMessage('Logged out successfully', 'success');
+                    console.log('Sign out successful');
+                    
+                    // Update UI
+                    updateUIForAuthState(null);
+                    
+                    alert('Logged out successfully!');
+                    
+                    // Reload to clear state
+                    window.location.reload();
+                } else {
+                    console.error('Auth not available');
+                    alert('Unable to logout');
                 }
             } catch (error) {
                 console.error('Logout error:', error);
-                showAuthMessage('Error logging out', 'error');
+                alert('Error: ' + error.message);
             }
         });
     }
