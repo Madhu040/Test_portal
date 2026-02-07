@@ -9,10 +9,13 @@
     "push-perms": "npx instant-cli@latest push perms"
   },
   "dependencies": {
-    "@instantdb/core": "^0.13.0"
+    "@instantdb/core": "^0.22.126"
   },
-  "devDependencies": {},
-  "keywords": ["instantdb", "ai", "app-builder"],
+  "keywords": [
+    "instantdb",
+    "ai",
+    "app-builder"
+  ],
   "author": "",
   "license": "MIT"
 }

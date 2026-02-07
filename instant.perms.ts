@@ -8,7 +8,7 @@ export default {
     allow: {
       view: 'isOwner',
       update: 'isOwner',
-      delete: 'isOwner'
+      delete: 'false'
     }
   },
 

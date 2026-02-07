@@ -1,52 +1,98 @@
-// InstantDB Schema Definition
-// This file defines the data model for the application
+// Docs: https://www.instantdb.com/docs/modeling-data
 
-export default {
-  // Extended user profile
-  $users: {
-    email: { type: 'string', unique: true, indexed: true },
-    name: { type: 'string' },
-    avatar: { type: 'string' },
-    plan: { type: 'string', default: 'free' }, // free, pro, enterprise
-    createdAt: { type: 'date', default: 'now' }
+import { i } from "@instantdb/core";
+
+const _schema = i.schema({
+  entities: {
+    $users: i.entity({
+      email: i.string().unique().indexed(),
+      name: i.string().optional(),
+      avatar: i.string().optional(),
+      plan: i.string().optional(), // free, pro, enterprise
+      createdAt: i.date().optional(),
+    }),
+    projects: i.entity({
+      title: i.string(),
+      description: i.string().optional(),
+      prompt: i.string(),
+      model: i.string(), // gpt5, claude, qwen, kimi
+      platforms: i.json(), // ['iOS', 'Android', 'Web']
+      features: i.json(), // array of selected features
+      style: i.string(), // modern, minimal, etc.
+      status: i.string(), // draft, generating, completed, failed
+      createdAt: i.date(),
+      updatedAt: i.date(),
+    }),
+    generations: i.entity({
+      code: i.json(), // generated files structure
+      preview: i.string().optional(), // preview URL
+      generatedAt: i.date(),
+      duration: i.number().optional(), // seconds
+      status: i.string(), // pending, generating, completed, failed
+    }),
+    analytics: i.entity({
+      eventType: i.string().indexed(), // login, logout, project_created, generation_started, etc.
+      metadata: i.json(),
+      timestamp: i.date().indexed(),
+    }),
   },
-
-  // User's app builder projects
-  projects: {
-    userId: { type: 'ref', to: '$users', indexed: true },
-    title: { type: 'string', required: true },
-    description: { type: 'string' },
-    prompt: { type: 'string', required: true },
-    model: { type: 'string', default: 'gpt5' }, // gpt5, claude, qwen, kimi
-    platforms: { type: 'json', default: [] }, // ['iOS', 'Android', 'Web']
-    features: { type: 'json', default: [] }, // array of selected features
-    style: { type: 'string', default: 'modern' },
-    status: { type: 'string', default: 'draft' }, // draft, generating, completed, failed
-    createdAt: { type: 'date', default: 'now', indexed: true },
-    updatedAt: { type: 'date', default: 'now' }
+  links: {
+    userProjects: {
+      forward: {
+        on: "projects",
+        has: "one",
+        label: "user",
+      },
+      reverse: {
+        on: "$users",
+        has: "many",
+        label: "projects",
+      },
+    },
+    projectGenerations: {
+      forward: {
+        on: "generations",
+        has: "one",
+        label: "project",
+      },
+      reverse: {
+        on: "projects",
+        has: "many",
+        label: "generations",
+      },
+    },
+    generationUser: {
+      forward: {
+        on: "generations",
+        has: "one",
+        label: "user",
+      },
+      reverse: {
+        on: "$users",
+        has: "many",
+        label: "generations",
+      },
+    },
+    userAnalytics: {
+      forward: {
+        on: "analytics",
+        has: "one",
+        label: "user",
+      },
+      reverse: {
+        on: "$users",
+        has: "many",
+        label: "analytics",
+      },
+    },
   },
+  rooms: {},
+});
 
-  // Track app generation history
-  generations: {
-    projectId: { type: 'ref', to: 'projects', indexed: true },
-    userId: { type: 'ref', to: '$users', indexed: true },
-    code: { type: 'json', default: {} }, // generated files structure
-    preview: { type: 'string' }, // preview URL
-    generatedAt: { type: 'date', default: 'now', indexed: true },
-    duration: { type: 'number' }, // seconds
-    status: { type: 'string', default: 'pending' } // pending, generating, completed, failed
-  },
+// This helps TypeScript display nicer intellisense
+type _AppSchema = typeof _schema;
+interface AppSchema extends _AppSchema {}
+const schema: AppSchema = _schema;
 
-  // Usage tracking and analytics
-  analytics: {
-    userId: { type: 'ref', to: '$users', indexed: true },
-    eventType: { type: 'string', indexed: true }, // login, logout, project_created, generation_started, etc.
-    metadata: { type: 'json', default: {} },
-    timestamp: { type: 'date', default: 'now', indexed: true }
-  }
-};
-
-// Relationships:
-// - Users → Projects (one-to-many via userId)
-// - Projects → Generations (one-to-many via projectId)  
-// - Users → Analytics (one-to-many via userId)
+export type { AppSchema };
+export default schema;
