@@ -11,17 +11,21 @@ function trackEvent(eventType, metadata = {}) {
   const db = getDB();
   if (!db) return;
   
-  const user = db.auth.user;
+  const user = getCurrentUser();
   if (!user) return;
   
-  db.transact([
-    db.tx.analytics[db.id()].update({
-      userId: user.id,
-      eventType,
-      metadata,
-      timestamp: new Date().toISOString()
-    })
-  ]);
+  try {
+    db.transact([
+      db.tx.analytics[db.id()].update({
+        userId: user.id,
+        eventType,
+        metadata,
+        timestamp: new Date().toISOString()
+      })
+    ]);
+  } catch (error) {
+    console.error('Error tracking event:', error);
+  }
 }
 
 // Sign in with email (magic code)
@@ -102,7 +106,13 @@ async function signOut() {
 function getCurrentUser() {
   const db = getDB();
   if (!db) return null;
-  return db.auth.user;
+  
+  // InstantDB stores auth in the reactor
+  if (db._reactor && db._reactor.auth) {
+    return db._reactor.auth.user || null;
+  }
+  
+  return null;
 }
 
 // Check if user is authenticated

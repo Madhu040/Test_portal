@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auth Debug</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #0f0; }
+        pre { background: #000; padding: 15px; overflow: auto; }
+        button { padding: 10px 20px; margin: 5px; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Auth State Debug</h1>
+    <button onclick="checkAuth()">Check Auth State</button>
+    <button onclick="checkDB()">Check DB</button>
+    <button onclick="testLogout()">Test Logout</button>
+    <button onclick="window.location.reload()">Refresh</button>
+    
+    <h3>Output:</h3>
+    <pre id="output"></pre>
+
+    <script type="module">
+        import { init } from './lib/instantdb.js';
+        window.InstantDB = init;
+        window.__instantdb_loaded = true;
+        console.log('✓ InstantDB loaded');
+        window.dispatchEvent(new CustomEvent('instantdb-ready'));
+    </script>
+    <script src="src/instant.js"></script>
+    <script src="src/auth.js"></script>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(msg) {
+            output.textContent += msg + '\n';
+            console.log(msg);
+        }
+        
+        window.checkAuth = function() {
+            output.textContent = '';
+            log('=== Checking Auth State ===\n');
+            
+            // Check if modules are loaded
+            log('InstantDB loaded: ' + (typeof window.InstantDB !== 'undefined'));
+            log('InstantDBClient loaded: ' + (typeof window.InstantDBClient !== 'undefined'));
+            log('Auth loaded: ' + (typeof window.Auth !== 'undefined'));
+            
+            // Get DB instance
+            const db = window.InstantDBClient?.getDB();
+            log('\nDB instance: ' + (db ? 'YES' : 'NO'));
+            
+            if (db) {
+                log('DB._reactor: ' + (db._reactor ? 'YES' : 'NO'));
+                
+                if (db._reactor) {
+                    log('DB._reactor.status: ' + db._reactor.status);
+                }
+                
+                log('\ndb.auth: ' + (db.auth ? 'YES' : 'NO'));
+                
+                if (db.auth) {
+                    log('db.auth keys: ' + Object.keys(db.auth).join(', '));
+                }
+                
+                // Try to get current user
+                log('\n=== Getting Current User ===');
+                
+                try {
+                    const user = Auth.getCurrentUser();
+                    log('Auth.getCurrentUser(): ' + (user ? JSON.stringify(user, null, 2) : 'null'));
+                } catch (error) {
+                    log('Error getting current user: ' + error.message);
+                }
+                
+                // Check getAuth method
+                try {
+                    const authState = db.getAuth();
+                    log('\ndb.getAuth(): ' + JSON.stringify(authState, null, 2));
+                } catch (error) {
+                    log('Error calling getAuth: ' + error.message);
+                }
+            }
+        };
+        
+        window.checkDB = function() {
+            output.textContent = '';
+            const db = window.InstantDBClient?.getDB();
+            
+            if (db) {
+                log('=== DB Object Structure ===\n');
+                log('DB keys: ' + Object.keys(db).join(', '));
+                log('\nDB._reactor keys: ' + (db._reactor ? Object.keys(db._reactor).join(', ') : 'N/A'));
+            } else {
+                log('DB not initialized');
+            }
+        };
+        
+        window.testLogout = async function() {
+            output.textContent = '';
+            log('=== Testing Logout ===\n');
+            
+            try {
+                const result = await Auth.signOut();
+                log('Logout result: ' + JSON.stringify(result));
+                
+                setTimeout(() => {
+                    log('\nChecking auth after logout...');
+                    const user = Auth.getCurrentUser();
+                    log('Current user: ' + (user ? JSON.stringify(user) : 'null'));
+                }, 500);
+            } catch (error) {
+                log('Error: ' + error.message);
+            }
+        };
+        
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            setTimeout(checkAuth, 1000);
+        });
+    </script>
+</body>
+</html>
