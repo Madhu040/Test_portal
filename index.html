@@ -61,11 +61,8 @@
             <button class="modal-close" id="closeModal">&times;</button>
             <div class="login-container">
                 <h2 id="modalTitle">Welcome Back</h2>
-                <p class="login-subtitle" id="modalSubtitle">Enter your email to get started - we'll send you a magic code</p>
+                <p class="login-subtitle" id="modalSubtitle">Sign in with Google or use your email to continue</p>
                 
-                <!-- Social login buttons hidden until OAuth is configured -->
-                <!-- To enable: Configure OAuth in config/oauth-config.js and uncomment below -->
-                <!--
                 <div class="social-login-buttons">
                     <button class="social-btn google-btn" id="googleLoginBtn">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -77,6 +74,8 @@
                         Continue with Google
                     </button>
                     
+                    <!-- Apple Sign-In hidden for now -->
+                    <!--
                     <button class="social-btn apple-btn" id="appleLoginBtn">
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path d="M16.1706 10.6154C16.1554 8.28408 18.0782 7.15012 18.1694 7.0926C17.0629 5.46952 15.3784 5.2576 14.7747 5.24152C13.2943 5.08536 11.8595 6.14784 11.1054 6.14784C10.3361 6.14784 9.16271 5.25672 7.93087 5.28088C6.31279 5.30456 4.81327 6.2532 3.96735 7.73064C2.21815 10.7474 3.51895 15.2138 5.19447 17.6634C6.03119 18.8666 7.00975 20.2166 8.24015 20.171C9.44351 20.121 9.87591 19.3742 11.3322 19.3742C12.7733 19.3742 13.1753 20.171 14.4299 20.1423C15.7229 20.121 16.5684 18.9246 17.3742 17.713C18.3379 16.3342 18.7247 15.0042 18.7399 14.9346C18.7095 14.9228 16.1882 13.951 16.1706 10.6154Z" fill="white"/>
@@ -84,12 +83,12 @@
                         </svg>
                         Continue with Apple
                     </button>
+                    -->
                 </div>
 
                 <div class="divider">
                     <span>or</span>
                 </div>
-                -->
                 
                 <form class="login-form" id="emailLoginForm">
                     <!-- Sign Up Fields (hidden by default) -->
