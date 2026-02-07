@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstantDB Simple Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-size: 18px;
+        }
+        .loading { background: #fff3cd; color: #856404; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 400px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📧 Email Login Test</h1>
+    
+    <div id="status" class="status loading">Loading InstantDB...</div>
+    
+    <div id="form" style="display: none;">
+        <input type="email" id="email" value="madhusudhanvenkata@gmail.com" placeholder="Your email">
+        <button id="sendBtn">Send Magic Code</button>
+        
+        <div id="codeSection" style="display: none; margin-top: 20px;">
+            <input type="text" id="code" placeholder="Enter 6-digit code" maxlength="6">
+            <button id="verifyBtn">Verify Code</button>
+        </div>
+    </div>
+    
+    <h3>Debug Log:</h3>
+    <pre id="log"></pre>
+
+    <!-- Try multiple CDN sources -->
+    <script>
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        const formEl = document.getElementById('form');
+        
+        function log(msg) {
+            console.log(msg);
+            logEl.textContent += new Date().toLocaleTimeString() + ' - ' + msg + '\n';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        function updateStatus(msg, type) {
+            statusEl.textContent = msg;
+            statusEl.className = 'status ' + type;
+        }
+        
+        log('Starting InstantDB load...');
+        
+        // Try to load from unpkg
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@instantdb/core@0.22.126/dist/index.umd.js';
+        
+        script.onload = function() {
+            log('✓ Script loaded from unpkg');
+            
+            setTimeout(() => {
+                if (typeof window.InstantDB === 'undefined') {
+                    log('✗ window.InstantDB still undefined after load');
+                    log('Available window properties: ' + Object.keys(window).filter(k => k.toLowerCase().includes('instant')).join(', '));
+                    updateStatus('❌ InstantDB failed to initialize', 'error');
+                } else {
+                    log('✓ window.InstantDB is available!');
+                    log('Type: ' + typeof window.InstantDB);
+                    initializeApp();
+                }
+            }, 500);
+        };
+        
+        script.onerror = function(error) {
+            log('✗ Failed to load script from CDN');
+            log('Error: ' + error);
+            updateStatus('❌ Failed to load InstantDB from CDN - check internet connection', 'error');
+        };
+        
+        document.head.appendChild(script);
+        log('Script tag added to page');
+        
+        let db = null;
+        
+        function initializeApp() {
+            try {
+                log('Initializing InstantDB...');
+                db = window.InstantDB({ 
+                    appId: '1d7dcab3-cd11-4c0b-ad09-4b34f71c344c' 
+                });
+                
+                log('✓ Database initialized');
+                log('DB status: ' + (db._reactor ? db._reactor.status : 'unknown'));
+                
+                updateStatus('✅ Ready! Enter your email and click Send', 'success');
+                formEl.style.display = 'block';
+                
+                setupEventListeners();
+                
+            } catch (error) {
+                log('✗ Failed to initialize database');
+                log('Error: ' + error.message);
+                log('Stack: ' + error.stack);
+                updateStatus('❌ Failed to initialize: ' + error.message, 'error');
+            }
+        }
+        
+        function setupEventListeners() {
+            const sendBtn = document.getElementById('sendBtn');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const emailInput = document.getElementById('email');
+            const codeInput = document.getElementById('code');
+            const codeSection = document.getElementById('codeSection');
+            
+            sendBtn.onclick = async () => {
+                const email = emailInput.value.trim();
+                
+                if (!email || !email.includes('@')) {
+                    updateStatus('❌ Please enter a valid email', 'error');
+                    return;
+                }
+                
+                sendBtn.disabled = true;
+                updateStatus('📧 Sending magic code...', 'loading');
+                log('Sending magic code to: ' + email);
+                
+                try {
+                    await db.auth.sendMagicCode({ email });
+                    log('✓ Magic code sent successfully!');
+                    updateStatus('✅ Magic code sent! Check your email (and spam folder)', 'success');
+                    codeSection.style.display = 'block';
+                    codeInput.focus();
+                } catch (error) {
+                    log('✗ Error sending magic code: ' + error.message);
+                    updateStatus('❌ Error: ' + error.message, 'error');
+                } finally {
+                    sendBtn.disabled = false;
+                }
+            };
+            
+            verifyBtn.onclick = async () => {
+                const email = emailInput.value.trim();
+                const code = codeInput.value.trim();
+                
+                if (!code || code.length !== 6) {
+                    updateStatus('❌ Please enter the 6-digit code', 'error');
+                    return;
+                }
+                
+                verifyBtn.disabled = true;
+                updateStatus('🔐 Verifying code...', 'loading');
+                log('Verifying code: ' + code);
+                
+                try {
+                    await db.auth.signInWithMagicCode({ email, code });
+                    log('✓ Successfully signed in!');
+                    updateStatus('🎉 Success! You are logged in!', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
+                } catch (error) {
+                    log('✗ Error verifying code: ' + error.message);
+                    updateStatus('❌ Invalid code: ' + error.message, 'error');
+                } finally {
+                    verifyBtn.disabled = false;
+                }
+            };
+        }
+    </script>
+</body>
+</html>

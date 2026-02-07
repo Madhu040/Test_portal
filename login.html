@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Login - LandingPageM</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 10px; font-size: 28px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .info { background: #e3f2fd; color: #1976d2; }
+        .success { background: #e8f5e9; color: #388e3c; }
+        .error { background: #ffebee; color: #c62828; }
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        input:focus { outline: none; border-color: #667eea; }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Email Login</h1>
+        <p class="subtitle">We'll send you a magic code</p>
+        
+        <div id="status" class="status info">Initializing...</div>
+
+        <input type="email" id="email" placeholder="Your email" value="madhusudhanvenkata@gmail.com">
+        <button id="sendBtn">Send Magic Code</button>
+
+        <div id="verifySection" class="hidden">
+            <input type="text" id="code" placeholder="Enter 6-digit code" maxlength="6">
+            <button id="verifyBtn">Verify & Sign In</button>
+        </div>
+    </div>
+
+    <!-- Load InstantDB as ES Module -->
+    <script type="module">
+        import { init } from './lib/instantdb.js';
+        
+        // Expose to window for the rest of the page
+        window.InstantDB = init;
+        window.__instantdb_loaded = true;
+        
+        console.log('✓ InstantDB loaded from local ES module');
+        
+        // Trigger custom event
+        window.dispatchEvent(new CustomEvent('instantdb-ready'));
+    </script>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const emailInput = document.getElementById('email');
+        const codeInput = document.getElementById('code');
+        const sendBtn = document.getElementById('sendBtn');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const verifySection = document.getElementById('verifySection');
+        
+        let db = null;
+        let currentEmail = '';
+        
+        function updateStatus(msg, type) {
+            statusEl.textContent = msg;
+            statusEl.className = 'status ' + type;
+        }
+        
+        // Initialize - wait for module to load
+        window.addEventListener('instantdb-ready', () => {
+            initializeApp();
+        });
+        
+        // Also try immediately in case it's already loaded
+        if (window.__instantdb_loaded) {
+            initializeApp();
+        }
+        
+        function initializeApp() {
+            if (typeof window.InstantDB === 'undefined') {
+                updateStatus('❌ Failed to load InstantDB', 'error');
+                console.error('InstantDB not loaded');
+                return;
+            }
+            
+            try {
+                db = window.InstantDB({ 
+                    appId: '1d7dcab3-cd11-4c0b-ad09-4b34f71c344c' 
+                });
+                
+                if (!db) {
+                    throw new Error('InstantDB returned null');
+                }
+                
+                updateStatus('✅ Ready! Enter your email', 'success');
+                console.log('✓ Database initialized');
+            } catch (error) {
+                updateStatus('❌ Error: ' + error.message, 'error');
+                console.error('Init error:', error);
+            }
+        }
+        
+        // Send magic code
+        sendBtn.onclick = async () => {
+            const email = emailInput.value.trim();
+            
+            if (!email || !email.includes('@')) {
+                updateStatus('❌ Please enter a valid email', 'error');
+                return;
+            }
+            
+            sendBtn.disabled = true;
+            updateStatus('📧 Sending magic code...', 'info');
+            
+            try {
+                await db.auth.sendMagicCode({ email });
+                currentEmail = email;
+                updateStatus('✅ Code sent! Check your email & spam folder', 'success');
+                verifySection.classList.remove('hidden');
+                codeInput.focus();
+            } catch (error) {
+                updateStatus('❌ Error: ' + error.message, 'error');
+                console.error('Send error:', error);
+            } finally {
+                sendBtn.disabled = false;
+            }
+        };
+        
+        // Verify code
+        verifyBtn.onclick = async () => {
+            const code = codeInput.value.trim();
+            
+            if (!code || code.length !== 6) {
+                updateStatus('❌ Please enter 6-digit code', 'error');
+                return;
+            }
+            
+            verifyBtn.disabled = true;
+            updateStatus('🔐 Verifying...', 'info');
+            
+            try {
+                await db.auth.signInWithMagicCode({ email: currentEmail, code });
+                updateStatus('🎉 Success! Redirecting...', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            } catch (error) {
+                updateStatus('❌ Invalid code', 'error');
+                console.error('Verify error:', error);
+            } finally {
+                verifyBtn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

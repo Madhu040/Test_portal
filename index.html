@@ -7,8 +7,14 @@
     <link rel="stylesheet" href="styles.css">
     <!-- OAuth Configuration -->
     <script src="config/oauth-config.js"></script>
-    <!-- InstantDB - Using CDN with specific version -->
-    <script src="https://cdn.jsdelivr.net/npm/@instantdb/core@0.22.126/dist/index.umd.js"></script>
+    <!-- InstantDB - Using local ES module -->
+    <script type="module">
+        import { init } from './lib/instantdb.js';
+        window.InstantDB = init;
+        window.__instantdb_loaded = true;
+        console.log('✓ InstantDB loaded');
+        window.dispatchEvent(new CustomEvent('instantdb-ready'));
+    </script>
     <!-- InstantDB Client -->
     <script src="src/instant.js"></script>
     <!-- Auth Helper -->

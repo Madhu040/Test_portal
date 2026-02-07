@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstantDB Debug Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #00ff00;
+        }
+        .test { padding: 10px; margin: 5px 0; border: 1px solid #333; }
+        .pass { background: #002200; }
+        .fail { background: #220000; color: #ff0000; }
+        .pending { background: #222200; color: #ffff00; }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            overflow: auto;
+            max-height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 InstantDB Debug Test</h1>
+    
+    <div id="tests"></div>
+    
+    <button id="testBtn">Run Magic Code Test</button>
+    
+    <h3>Console Log:</h3>
+    <pre id="log"></pre>
+
+    <!-- InstantDB - Using local ES module -->
+    <script type="module">
+        import { init, id, tx } from './node_modules/@instantdb/core/dist/esm/index.js';
+        window.InstantDB = init;
+        window.InstantDB.id = id;
+        window.InstantDB.tx = tx;
+        console.log('✓ InstantDB loaded via ESM');
+        
+        // Dispatch event when ready
+        window.dispatchEvent(new Event('instantdb-ready'));
+    </script>
+    
+    <script>
+        // Wait for InstantDB to be ready
+        window.addEventListener('instantdb-ready', () => {
+            console.log('InstantDB is ready to use');
+        });
+    </script>
+    
+    <script>
+        const testsEl = document.getElementById('tests');
+        const logEl = document.getElementById('log');
+        const testBtn = document.getElementById('testBtn');
+        
+        function log(msg) {
+            console.log(msg);
+            logEl.textContent += msg + '\n';
+        }
+        
+        function addTest(name, status, details) {
+            const div = document.createElement('div');
+            div.className = `test ${status}`;
+            div.innerHTML = `<strong>${status.toUpperCase()}:</strong> ${name}<br><small>${details}</small>`;
+            testsEl.appendChild(div);
+        }
+        
+        // Wait a bit for script to load
+        setTimeout(() => {
+            log('=== Starting InstantDB Debug Tests ===');
+            
+            // Test 1: Check if InstantDB global exists
+            if (typeof window.InstantDB !== 'undefined') {
+                addTest('InstantDB Global', 'pass', 'window.InstantDB is defined');
+                log('✓ InstantDB loaded: ' + typeof window.InstantDB);
+            } else {
+                addTest('InstantDB Global', 'fail', 'window.InstantDB is undefined - CDN failed to load or expose global');
+                log('✗ InstantDB NOT loaded');
+                log('Available globals: ' + Object.keys(window).filter(k => k.toLowerCase().includes('instant')).join(', '));
+            }
+            
+            // Test 2: Try to initialize
+            if (typeof window.InstantDB !== 'undefined') {
+                try {
+                    const db = window.InstantDB({ 
+                        appId: '1d7dcab3-cd11-4c0b-ad09-4b34f71c344c' 
+                    });
+                    
+                    addTest('Database Initialization', 'pass', 'Successfully created DB instance');
+                    log('✓ Database initialized');
+                    log('DB auth status: ' + (db._reactor ? db._reactor.status : 'unknown'));
+                    
+                    // Test 3: Try to send magic code
+                    testBtn.onclick = async () => {
+                        testBtn.disabled = true;
+                        testBtn.textContent = 'Testing...';
+                        log('\n=== Testing Magic Code ===');
+                        
+                        try {
+                            log('Sending magic code to: madhusudhanvenkata@gmail.com');
+                            await db.auth.sendMagicCode({ 
+                                email: 'madhusudhanvenkata@gmail.com' 
+                            });
+                            
+                            addTest('Magic Code Send', 'pass', 'Email sent! Check your inbox and spam folder');
+                            log('✓ Magic code sent successfully!');
+                            log('⚠️ Check your email (including spam/promotions folder)');
+                        } catch (error) {
+                            addTest('Magic Code Send', 'fail', 'Error: ' + error.message);
+                            log('✗ Error sending magic code: ' + error.message);
+                            log('Full error: ' + JSON.stringify(error, null, 2));
+                        } finally {
+                            testBtn.disabled = false;
+                            testBtn.textContent = 'Run Magic Code Test Again';
+                        }
+                    };
+                    
+                    testBtn.style.display = 'block';
+                    
+                } catch (error) {
+                    addTest('Database Initialization', 'fail', 'Error: ' + error.message);
+                    log('✗ Failed to initialize: ' + error.message);
+                }
+            } else {
+                addTest('Database Initialization', 'fail', 'Cannot initialize - InstantDB not loaded');
+                testBtn.style.display = 'none';
+            }
+            
+            log('\n=== Tests Complete ===');
+            
+        }, 1000); // Wait 1 second for CDN to load
+    </script>
+</body>
+</html>
