@@ -1,7 +1,35 @@
 // FAQ Accordion
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize auth state listener
-    initAuthStateListener();
+    console.log('Script loaded');
+    
+    // Wait for Auth to be available
+    function waitForAuth() {
+        return new Promise((resolve) => {
+            if (typeof Auth !== 'undefined') {
+                resolve();
+            } else {
+                // Check every 100ms for Auth to be available
+                const interval = setInterval(() => {
+                    if (typeof Auth !== 'undefined') {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 100);
+                
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    clearInterval(interval);
+                    console.warn('Auth not loaded after 5 seconds');
+                    resolve();
+                }, 5000);
+            }
+        });
+    }
+    
+    // Initialize after Auth is available
+    waitForAuth().then(() => {
+        initAuthStateListener();
+    });
     
     // Login Modal Functionality
     const loginModal = document.getElementById('loginModal');
@@ -24,10 +52,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize auth state
     function initAuthStateListener() {
+        console.log('Initializing auth state listener');
         if (typeof Auth !== 'undefined' && Auth.onAuthStateChanged) {
             Auth.onAuthStateChanged((user) => {
+                console.log('Auth state changed:', user);
                 updateUIForAuthState(user);
             });
+        } else {
+            console.warn('Auth not available for state listener');
         }
     }
 
@@ -57,8 +89,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async function() {
             try {
-                await Auth.signOut();
-                showAuthMessage('Logged out successfully', 'success');
+                if (typeof Auth !== 'undefined') {
+                    await Auth.signOut();
+                    showAuthMessage('Logged out successfully', 'success');
+                }
             } catch (error) {
                 console.error('Logout error:', error);
                 showAuthMessage('Error logging out', 'error');
@@ -69,34 +103,47 @@ document.addEventListener('DOMContentLoaded', function() {
     function showAuthMessage(message, type = 'info') {
         if (!authMessage) return;
         authMessage.textContent = message;
-        authMessage.style.color = type === 'error' ? '#ef4444' : type === 'success' ? '#22c55e' : var(--text-primary);
+        authMessage.style.color = type === 'error' ? '#ef4444' : type === 'success' ? '#22c55e' : 'var(--text-primary)';
     }
 
     function resetAuthForm() {
         isCodeStep = false;
         currentEmail = '';
-        emailInput.value = '';
+        if (emailInput) emailInput.value = '';
         if (codeInput) codeInput.value = '';
-        emailStep.style.display = 'block';
-        codeStep.style.display = 'none';
-        authSubmitBtn.textContent = 'Send Magic Code';
-        backToEmail.style.display = 'none';
-        authMessage.textContent = '';
+        if (emailStep) emailStep.style.display = 'block';
+        if (codeStep) codeStep.style.display = 'none';
+        if (authSubmitBtn) authSubmitBtn.textContent = 'Send Magic Code';
+        if (backToEmail) backToEmail.style.display = 'none';
+        if (authMessage) authMessage.textContent = '';
     }
 
     // Open login modal
     if (loginBtn) {
+        console.log('Login button found, adding click handler');
         loginBtn.addEventListener('click', function(e) {
+            console.log('Login button clicked');
             e.preventDefault();
+            
+            if (!loginModal) {
+                console.error('Login modal not found!');
+                alert('Login modal not found. Please refresh the page.');
+                return;
+            }
+            
             resetAuthForm();
             loginModal.classList.add('active');
             document.body.style.overflow = 'hidden';
+            console.log('Modal should be visible now');
         });
+    } else {
+        console.error('Login button not found!');
     }
 
     // Close modal when clicking X
     if (closeModal) {
         closeModal.addEventListener('click', function() {
+            console.log('Close button clicked');
             loginModal.classList.remove('active');
             document.body.style.overflow = 'auto';
             resetAuthForm();
@@ -179,9 +226,16 @@ document.addEventListener('DOMContentLoaded', function() {
         emailLoginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Check if Auth is available
+            if (typeof Auth === 'undefined') {
+                showAuthMessage('Authentication system not loaded. Please refresh the page.', 'error');
+                console.error('Auth is not defined');
+                return;
+            }
+            
             if (!isCodeStep) {
                 // Step 1: Send magic code
-                const email = emailInput.value.trim();
+                const email = emailInput?.value?.trim();
                 if (!email) {
                     showAuthMessage('Please enter your email', 'error');
                     return;
@@ -191,26 +245,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 authSubmitBtn.textContent = 'Sending...';
                 showAuthMessage('Sending magic code...', 'info');
                 
-                const result = await Auth.signInWithEmail(email);
-                
-                authSubmitBtn.disabled = false;
-                
-                if (result.success) {
-                    currentEmail = email;
-                    isCodeStep = true;
-                    emailStep.style.display = 'none';
-                    codeStep.style.display = 'block';
-                    authSubmitBtn.textContent = 'Verify Code';
-                    backToEmail.style.display = 'inline';
-                    showAuthMessage(result.message, 'success');
-                    setTimeout(() => codeInput.focus(), 100);
-                } else {
-                    showAuthMessage(result.error || 'Failed to send magic code', 'error');
+                try {
+                    const result = await Auth.signInWithEmail(email);
+                    
+                    authSubmitBtn.disabled = false;
+                    
+                    if (result.success) {
+                        currentEmail = email;
+                        isCodeStep = true;
+                        emailStep.style.display = 'none';
+                        codeStep.style.display = 'block';
+                        authSubmitBtn.textContent = 'Verify Code';
+                        backToEmail.style.display = 'inline';
+                        showAuthMessage(result.message, 'success');
+                        setTimeout(() => codeInput?.focus(), 100);
+                    } else {
+                        showAuthMessage(result.error || 'Failed to send magic code', 'error');
+                        authSubmitBtn.textContent = 'Send Magic Code';
+                    }
+                } catch (error) {
+                    console.error('Send magic code error:', error);
+                    showAuthMessage('Error sending magic code. Please try again.', 'error');
+                    authSubmitBtn.disabled = false;
                     authSubmitBtn.textContent = 'Send Magic Code';
                 }
             } else {
                 // Step 2: Verify code
-                const code = codeInput.value.trim();
+                const code = codeInput?.value?.trim();
                 if (!code) {
                     showAuthMessage('Please enter the verification code', 'error');
                     return;
@@ -220,19 +281,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 authSubmitBtn.textContent = 'Verifying...';
                 showAuthMessage('Verifying code...', 'info');
                 
-                const result = await Auth.verifyMagicCode(currentEmail, code);
-                
-                authSubmitBtn.disabled = false;
-                
-                if (result.success) {
-                    showAuthMessage('Login successful!', 'success');
-                    setTimeout(() => {
-                        loginModal.classList.remove('active');
-                        document.body.style.overflow = 'auto';
-                        resetAuthForm();
-                    }, 1000);
-                } else {
-                    showAuthMessage(result.error || 'Invalid code', 'error');
+                try {
+                    const result = await Auth.verifyMagicCode(currentEmail, code);
+                    
+                    authSubmitBtn.disabled = false;
+                    
+                    if (result.success) {
+                        showAuthMessage('Login successful!', 'success');
+                        setTimeout(() => {
+                            loginModal.classList.remove('active');
+                            document.body.style.overflow = 'auto';
+                            resetAuthForm();
+                        }, 1000);
+                    } else {
+                        showAuthMessage(result.error || 'Invalid code', 'error');
+                        authSubmitBtn.textContent = 'Verify Code';
+                    }
+                } catch (error) {
+                    console.error('Verify code error:', error);
+                    showAuthMessage('Error verifying code. Please try again.', 'error');
+                    authSubmitBtn.disabled = false;
                     authSubmitBtn.textContent = 'Verify Code';
                 }
             }
