@@ -137,7 +137,12 @@
     </div>
 
     <!-- InstantDB - Using CDN with specific version -->
-    <script src="https://cdn.jsdelivr.net/npm/@instantdb/core@0.22.126/dist/index.umd.js"></script>
+    <script type="module">
+        import { init } from './lib/instantdb.js';
+        window.InstantDB = init;
+        window.__instantdb_loaded = true;
+        window.dispatchEvent(new CustomEvent('instantdb-ready'));
+    </script>
     <script src="src/instant.js"></script>
     <script src="src/auth.js"></script>
 

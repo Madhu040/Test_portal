@@ -8,7 +8,12 @@
     <link rel="stylesheet" href="builder.css">
     <link rel="stylesheet" href="styles/dashboard.css">
     <!-- InstantDB -->
-    <script src="https://cdn.jsdelivr.net/npm/@instantdb/core@latest/dist/index.umd.js"></script>
+    <script type="module">
+        import { init } from './lib/instantdb.js';
+        window.InstantDB = init;
+        window.__instantdb_loaded = true;
+        window.dispatchEvent(new CustomEvent('instantdb-ready'));
+    </script>
     <script src="src/instant.js"></script>
     <script src="src/auth.js"></script>
 </head>
