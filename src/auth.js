@@ -143,11 +143,24 @@ async function updateUserProfile(updates) {
 // Listen to auth state changes
 function onAuthStateChanged(callback) {
   const db = getDB();
-  if (!db) return () => {};
+  if (!db) {
+    console.warn('DB not initialized for auth subscription');
+    return () => {};
+  }
   
-  // Subscribe to auth changes
-  const unsubscribe = db.subscribeAuth(callback);
-  return unsubscribe;
+  try {
+    // Subscribe to auth changes - InstantDB passes the full auth object
+    const unsubscribe = db.subscribeAuth((authState) => {
+      console.log('Auth state update:', authState);
+      // Pass just the user to the callback
+      callback(authState.user || null);
+    });
+    
+    return unsubscribe;
+  } catch (error) {
+    console.error('Error subscribing to auth:', error);
+    return () => {};
+  }
 }
 
 // Export auth functions
