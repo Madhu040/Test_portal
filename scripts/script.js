@@ -40,15 +40,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const appleLoginBtn = document.getElementById('appleLoginBtn');
     const emailInput = document.getElementById('email');
     const codeInput = document.getElementById('code');
+    const fullNameInput = document.getElementById('fullName');
+    const companyInput = document.getElementById('company');
+    const agreeTermsCheckbox = document.getElementById('agreeTerms');
     const emailStep = document.getElementById('emailStep');
     const codeStep = document.getElementById('codeStep');
+    const nameField = document.getElementById('nameField');
+    const companyField = document.getElementById('companyField');
+    const termsCheckbox = document.getElementById('termsCheckbox');
     const authSubmitBtn = document.getElementById('authSubmitBtn');
     const backToEmail = document.getElementById('backToEmail');
     const authMessage = document.getElementById('authMessage');
     const logoutBtn = document.getElementById('logoutBtn');
+    const switchModeLink = document.getElementById('switchModeLink');
+    const switchModeText = document.getElementById('switchModeText');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSubtitle = document.getElementById('modalSubtitle');
     
     let currentEmail = '';
     let isCodeStep = false;
+    let isSignUpMode = false;
+    let userProfile = {};
 
     // Initialize auth state
     function initAuthStateListener() {
@@ -109,13 +121,57 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetAuthForm() {
         isCodeStep = false;
         currentEmail = '';
+        userProfile = {};
         if (emailInput) emailInput.value = '';
         if (codeInput) codeInput.value = '';
+        if (fullNameInput) fullNameInput.value = '';
+        if (companyInput) companyInput.value = '';
+        if (agreeTermsCheckbox) agreeTermsCheckbox.checked = false;
         if (emailStep) emailStep.style.display = 'block';
         if (codeStep) codeStep.style.display = 'none';
-        if (authSubmitBtn) authSubmitBtn.textContent = 'Send Magic Code';
+        if (nameField) nameField.style.display = isSignUpMode ? 'block' : 'none';
+        if (companyField) companyField.style.display = isSignUpMode ? 'block' : 'none';
+        if (termsCheckbox) termsCheckbox.style.display = isSignUpMode ? 'flex' : 'none';
+        if (authSubmitBtn) authSubmitBtn.textContent = isSignUpMode ? 'Create Account' : 'Send Magic Code';
         if (backToEmail) backToEmail.style.display = 'none';
         if (authMessage) authMessage.textContent = '';
+    }
+
+    // Switch between sign in and sign up
+    function switchMode(toSignUp) {
+        isSignUpMode = toSignUp;
+        
+        if (isSignUpMode) {
+            // Switch to sign up mode
+            modalTitle.textContent = 'Create Your Account';
+            modalSubtitle.textContent = 'Start building amazing apps today';
+            switchModeText.textContent = 'Already have an account?';
+            switchModeLink.textContent = 'Sign in';
+            nameField.style.display = 'block';
+            companyField.style.display = 'block';
+            termsCheckbox.style.display = 'flex';
+            authSubmitBtn.textContent = 'Create Account';
+        } else {
+            // Switch to sign in mode
+            modalTitle.textContent = 'Welcome Back';
+            modalSubtitle.textContent = 'Sign in to continue building amazing apps';
+            switchModeText.textContent = "Don't have an account?";
+            switchModeLink.textContent = 'Sign up';
+            nameField.style.display = 'none';
+            companyField.style.display = 'none';
+            termsCheckbox.style.display = 'none';
+            authSubmitBtn.textContent = 'Send Magic Code';
+        }
+        
+        resetAuthForm();
+    }
+
+    // Mode switch handler
+    if (switchModeLink) {
+        switchModeLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            switchMode(!isSignUpMode);
+        });
     }
 
     // Open login modal
@@ -234,10 +290,49 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (!isCodeStep) {
-                // Step 1: Send magic code
+                // Step 1: Validate and send magic code
+                
+                // Validate sign up fields
+                if (isSignUpMode) {
+                    const fullName = fullNameInput?.value?.trim();
+                    const company = companyInput?.value?.trim();
+                    const agreeTerms = agreeTermsCheckbox?.checked;
+                    
+                    if (!fullName) {
+                        showAuthMessage('Please enter your full name', 'error');
+                        fullNameInput?.focus();
+                        return;
+                    }
+                    
+                    if (fullName.length < 2) {
+                        showAuthMessage('Please enter a valid name', 'error');
+                        fullNameInput?.focus();
+                        return;
+                    }
+                    
+                    if (!agreeTerms) {
+                        showAuthMessage('Please agree to the Terms of Service', 'error');
+                        return;
+                    }
+                    
+                    // Store profile data for after verification
+                    userProfile = {
+                        name: fullName,
+                        company: company || '',
+                        email: emailInput?.value?.trim()
+                    };
+                }
+                
                 const email = emailInput?.value?.trim();
                 if (!email) {
                     showAuthMessage('Please enter your email', 'error');
+                    return;
+                }
+                
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    showAuthMessage('Please enter a valid email address', 'error');
                     return;
                 }
                 
@@ -255,25 +350,33 @@ document.addEventListener('DOMContentLoaded', function() {
                         isCodeStep = true;
                         emailStep.style.display = 'none';
                         codeStep.style.display = 'block';
+                        if (nameField) nameField.style.display = 'none';
+                        if (companyField) companyField.style.display = 'none';
+                        if (termsCheckbox) termsCheckbox.style.display = 'none';
                         authSubmitBtn.textContent = 'Verify Code';
                         backToEmail.style.display = 'inline';
                         showAuthMessage(result.message, 'success');
                         setTimeout(() => codeInput?.focus(), 100);
                     } else {
                         showAuthMessage(result.error || 'Failed to send magic code', 'error');
-                        authSubmitBtn.textContent = 'Send Magic Code';
+                        authSubmitBtn.textContent = isSignUpMode ? 'Create Account' : 'Send Magic Code';
                     }
                 } catch (error) {
                     console.error('Send magic code error:', error);
                     showAuthMessage('Error sending magic code. Please try again.', 'error');
                     authSubmitBtn.disabled = false;
-                    authSubmitBtn.textContent = 'Send Magic Code';
+                    authSubmitBtn.textContent = isSignUpMode ? 'Create Account' : 'Send Magic Code';
                 }
             } else {
-                // Step 2: Verify code
+                // Step 2: Verify code and create/update profile
                 const code = codeInput?.value?.trim();
                 if (!code) {
                     showAuthMessage('Please enter the verification code', 'error');
+                    return;
+                }
+                
+                if (code.length !== 6) {
+                    showAuthMessage('Verification code must be 6 digits', 'error');
                     return;
                 }
                 
@@ -287,12 +390,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     authSubmitBtn.disabled = false;
                     
                     if (result.success) {
-                        showAuthMessage('Login successful!', 'success');
+                        // If sign up, update user profile with collected data
+                        if (isSignUpMode && userProfile.name) {
+                            showAuthMessage('Setting up your profile...', 'info');
+                            
+                            try {
+                                await Auth.updateUserProfile({
+                                    name: userProfile.name,
+                                    company: userProfile.company,
+                                    plan: 'free'
+                                });
+                                
+                                // Track sign up event
+                                Auth.trackEvent('user_signup', {
+                                    method: 'email',
+                                    hasCompany: !!userProfile.company
+                                });
+                                
+                                showAuthMessage(`Welcome aboard, ${userProfile.name.split(' ')[0]}! 🎉`, 'success');
+                            } catch (profileError) {
+                                console.error('Profile update error:', profileError);
+                                // Continue anyway - user is authenticated
+                            }
+                        } else {
+                            showAuthMessage('Login successful!', 'success');
+                        }
+                        
                         setTimeout(() => {
                             loginModal.classList.remove('active');
                             document.body.style.overflow = 'auto';
                             resetAuthForm();
-                        }, 1000);
+                            isSignUpMode = false;
+                            switchMode(false);
+                        }, 1500);
                     } else {
                         showAuthMessage(result.error || 'Invalid code', 'error');
                         authSubmitBtn.textContent = 'Verify Code';
@@ -307,16 +437,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Sign up link handler
-    const signupLink = document.getElementById('signupLink');
-    if (signupLink) {
-        signupLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Magic code works for both sign up and sign in
-            showAuthMessage('Enter your email to get started - works for both sign up and sign in!', 'info');
-        });
-    }
-
+    // Sign up link handler - removed, now using switchModeLink
+    
     const faqItems = document.querySelectorAll('.faq-item');
     
     faqItems.forEach(item => {
