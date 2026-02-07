@@ -6,6 +6,10 @@
     <title>App Builder - LandingPageM</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="builder.css">
+    <!-- InstantDB -->
+    <script src="https://cdn.jsdelivr.net/npm/@instantdb/core@latest/dist/index.umd.js"></script>
+    <script src="src/instant.js"></script>
+    <script src="src/auth.js"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -46,8 +50,17 @@
             </a>
         </div>
         <div class="builder-header">
-            <h1>Build Your App with AI</h1>
-            <p>Describe what you want to build and let our AI bring it to life</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto;">
+                <div>
+                    <h1>Build Your App with AI</h1>
+                    <p>Describe what you want to build and let our AI bring it to life</p>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <input type="text" id="projectTitle" placeholder="Project Name" 
+                           style="padding: 0.75rem 1rem; border: 2px solid var(--border-color); border-radius: 0.5rem; min-width: 250px;">
+                    <button class="btn-secondary" id="saveProjectBtn">Save Project</button>
+                </div>
+            </div>
         </div>
 
         <div class="builder-content">
@@ -287,6 +300,6 @@
     </div>
 
     <script src="script.js"></script>
-    <script src="builder.js"></script>
+    <script src="scripts/builder.js"></script>
 </body>
 </html>

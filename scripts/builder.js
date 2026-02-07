@@ -1,17 +1,51 @@
-// App Builder Functionality
+// App Builder Functionality with InstantDB
 document.addEventListener('DOMContentLoaded', function() {
+    // Check auth and load project if editing
+    const user = Auth?.getCurrentUser();
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('project');
+    let currentProject = null;
+    
     // Elements
     const promptInput = document.getElementById('promptInput');
     const charCount = document.getElementById('charCount');
     const voiceBtn = document.getElementById('voiceBtn');
     const clearBtn = document.getElementById('clearBtn');
     const buildBtn = document.getElementById('buildBtn');
+    const saveProjectBtn = document.getElementById('saveProjectBtn');
+    const projectTitleInput = document.getElementById('projectTitle');
     const generationStatus = document.getElementById('generationStatus');
     const previewContainer = document.getElementById('previewContainer');
     const statusTitle = document.getElementById('statusTitle');
     const statusMessage = document.getElementById('statusMessage');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
+    
+    // Load project if editing
+    if (projectId && user) {
+        loadProject(projectId);
+    }
+    
+    // Save project handler
+    if (saveProjectBtn) {
+        saveProjectBtn.addEventListener('click', saveProject);
+    }
+    
+    // Auto-save on significant changes (debounced)
+    let autoSaveTimeout;
+    function scheduleAutoSave() {
+        if (!user) return;
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            if (currentProject) {
+                saveProject(true); // Silent auto-save
+            }
+        }, 5000); // Auto-save after 5 seconds of inactivity
+    }
+    
+    if (promptInput) {
+        promptInput.addEventListener('input', scheduleAutoSave);
+    }
     
     // Model selection
     const modelOptions = document.querySelectorAll('.model-option');
@@ -139,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Build app functionality
     if (buildBtn) {
-        buildBtn.addEventListener('click', function() {
+        buildBtn.addEventListener('click', async function() {
             const prompt = promptInput.value.trim();
             
             if (!prompt) {
@@ -152,6 +186,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Please provide a more detailed description (at least 20 characters)');
                 promptInput.focus();
                 return;
+            }
+            
+            // Check if user is logged in
+            const user = Auth?.getCurrentUser();
+            if (!user) {
+                alert('Please log in to build apps');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Save project first if not saved
+            if (!currentProject) {
+                await saveProject(true);
             }
             
             // Get selected options
@@ -171,12 +218,44 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             
             console.log('Building app with config:', config);
-            startGeneration(config);
+            await startGeneration(config, user.id);
         });
     }
     
     // Generation process
-    function startGeneration(config) {
+    async function startGeneration(config, userId) {
+        const db = window.InstantDBClient?.getDB();
+        
+        // Update project status
+        if (currentProject && db) {
+            await db.transact([
+                db.tx.projects[currentProject.id].update({
+                    status: 'generating',
+                    updatedAt: new Date().toISOString()
+                })
+            ]);
+        }
+        
+        // Create generation record
+        let generationId;
+        if (db && currentProject) {
+            generationId = db.id();
+            await db.transact([
+                db.tx.generations[generationId].update({
+                    projectId: currentProject.id,
+                    userId: userId,
+                    status: 'generating',
+                    generatedAt: new Date().toISOString()
+                })
+            ]);
+            
+            Auth.trackEvent('generation_started', { 
+                projectId: currentProject.id,
+                generationId,
+                model: config.model
+            });
+        }
+        
         // Disable build button
         buildBtn.disabled = true;
         buildBtn.textContent = 'Building...';
@@ -200,6 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
         
         let currentStage = 0;
+        const startTime = Date.now();
         
         function processStage() {
             if (currentStage < stages.length) {
@@ -217,14 +297,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(processStage, stage.duration);
             } else {
                 // Generation complete
-                completeGeneration(config);
+                const duration = Math.floor((Date.now() - startTime) / 1000);
+                completeGeneration(config, generationId, duration);
             }
         }
         
         processStage();
     }
     
-    function completeGeneration(config) {
+    async function completeGeneration(config, generationId, duration) {
+        const db = window.InstantDBClient?.getDB();
+        
+        // Update generation record
+        if (db && generationId) {
+            await db.transact([
+                db.tx.generations[generationId].update({
+                    status: 'completed',
+                    duration: duration,
+                    code: {
+                        files: [
+                            'index.html',
+                            'styles.css',
+                            'app.js',
+                            'components/',
+                            'config.json',
+                            'README.md'
+                        ]
+                    }
+                })
+            ]);
+            
+            Auth.trackEvent('generation_completed', { 
+                generationId,
+                duration,
+                model: config.model
+            });
+        }
+        
+        // Update project status
+        if (db && currentProject) {
+            await db.transact([
+                db.tx.projects[currentProject.id].update({
+                    status: 'completed',
+                    updatedAt: new Date().toISOString()
+                })
+            ]);
+        }
+        
         // Hide generation status
         setTimeout(() => {
             generationStatus.classList.remove('active');
@@ -349,3 +468,210 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Project Management Functions
+async function saveProject(silent = false) {
+    const user = Auth?.getCurrentUser();
+    if (!user) {
+        if (!silent) alert('Please log in to save projects');
+        return;
+    }
+    
+    const db = window.InstantDBClient?.getDB();
+    if (!db) {
+        if (!silent) alert('Database not initialized');
+        return;
+    }
+    
+    const title = document.getElementById('projectTitle').value.trim();
+    const prompt = document.getElementById('promptInput').value.trim();
+    
+    if (!title) {
+        if (!silent) alert('Please enter a project name');
+        document.getElementById('projectTitle').focus();
+        return;
+    }
+    
+    if (!prompt) {
+        if (!silent) alert('Please enter a project description');
+        return;
+    }
+    
+    // Get all configuration
+    const config = getCurrentConfig();
+    
+    try {
+        if (currentProject) {
+            // Update existing project
+            await db.transact([
+                db.tx.projects[currentProject.id].update({
+                    title,
+                    description: prompt.substring(0, 200),
+                    prompt,
+                    model: config.model,
+                    platforms: config.platforms,
+                    features: config.features,
+                    style: config.style,
+                    updatedAt: new Date().toISOString()
+                })
+            ]);
+            
+            if (!silent) {
+                showNotification('Project updated successfully!', 'success');
+            }
+            
+            Auth.trackEvent('project_updated', { projectId: currentProject.id });
+        } else {
+            // Create new project
+            const projectId = db.id();
+            await db.transact([
+                db.tx.projects[projectId].update({
+                    userId: user.id,
+                    title,
+                    description: prompt.substring(0, 200),
+                    prompt,
+                    model: config.model,
+                    platforms: config.platforms,
+                    features: config.features,
+                    style: config.style,
+                    status: 'draft',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                })
+            ]);
+            
+            currentProject = { id: projectId };
+            
+            // Update URL
+            window.history.replaceState({}, '', `app-builder.html?project=${projectId}`);
+            
+            if (!silent) {
+                showNotification('Project saved successfully!', 'success');
+            }
+            
+            Auth.trackEvent('project_created', { projectId });
+        }
+    } catch (error) {
+        console.error('Error saving project:', error);
+        if (!silent) {
+            alert('Failed to save project. Please try again.');
+        }
+    }
+}
+
+async function loadProject(projectId) {
+    const db = window.InstantDBClient?.getDB();
+    if (!db) return;
+    
+    try {
+        const { data, error } = await db.query({
+            projects: {
+                $: {
+                    where: {
+                        id: projectId
+                    }
+                }
+            }
+        });
+        
+        if (error || !data?.projects?.[0]) {
+            alert('Project not found');
+            window.location.href = 'dashboard.html';
+            return;
+        }
+        
+        const project = data.projects[0];
+        currentProject = project;
+        
+        // Populate form
+        document.getElementById('projectTitle').value = project.title;
+        document.getElementById('promptInput').value = project.prompt;
+        
+        // Set model
+        const modelRadio = document.querySelector(`input[name="model"][value="${project.model}"]`);
+        if (modelRadio) {
+            modelRadio.checked = true;
+            modelRadio.closest('.model-option').classList.add('active');
+        }
+        
+        // Set platforms
+        (project.platforms || []).forEach(platform => {
+            const checkbox = document.querySelector(`input[name="platform"][value="${platform.toLowerCase()}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
+        
+        // Set features
+        (project.features || []).forEach(feature => {
+            const checkbox = document.querySelector(`input[name="feature"][value="${feature}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
+        
+        // Set style
+        const styleSelect = document.getElementById('styleSelect');
+        if (styleSelect) {
+            styleSelect.value = project.style;
+        }
+        
+        // Update character count
+        const charCount = document.getElementById('charCount');
+        if (charCount) {
+            charCount.textContent = `${project.prompt.length} character${project.prompt.length !== 1 ? 's' : ''}`;
+        }
+        
+        showNotification('Project loaded', 'success');
+    } catch (error) {
+        console.error('Error loading project:', error);
+        alert('Failed to load project');
+    }
+}
+
+function getCurrentConfig() {
+    return {
+        model: document.querySelector('input[name="model"]:checked')?.value || 'gpt5',
+        platforms: Array.from(document.querySelectorAll('input[name="platform"]:checked')).map(cb => cb.value),
+        features: Array.from(document.querySelectorAll('input[name="feature"]:checked')).map(cb => cb.value),
+        style: document.getElementById('styleSelect')?.value || 'modern'
+    };
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: ${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#6366f1'};
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add CSS for notifications
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+

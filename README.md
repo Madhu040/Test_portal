@@ -1,159 +1,287 @@
-# LandingPageM
+# LandingPageM - Fullstack AI App Builder
 
-A modern, responsive landing page for an AI-powered mobile and web app builder.
+A modern, fullstack application for building AI-powered mobile and web apps with InstantDB backend.
 
 ## Features
 
 - 🎨 Modern, professional design with gradient accents
 - 📱 Fully responsive layout for all devices
 - ✨ Smooth animations and transitions
-- 🔐 Login modal with Google and Apple Sign-In integration
+- 🔐 **Authentication** with email magic codes, Google OAuth, and Apple Sign-In
 - 🤖 **AI-Powered App Builder** with voice input and model selection
+- 📊 **User Dashboard** with project management and analytics
+- 💾 **Real-time Data Sync** with InstantDB
+- 📈 **Analytics Tracking** for user behavior and engagement
 - 🎯 Interactive FAQ accordion
 - 🚀 Call-to-action sections throughout
 - 💎 Beautiful UI components
 
 ## Technology Stack
 
-- HTML5
-- CSS3 (with custom properties and animations)
-- Vanilla JavaScript (no dependencies)
-
-## Getting Started
-
-### Running Locally
-
-1. Clone the repository
-2. Navigate to the project directory
-3. Start a local server:
-
-```bash
-python3 -m http.server 8000
-```
-
-4. Open your browser and visit `http://localhost:8000`
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Backend**: InstantDB (Backend-as-a-Service)
+- **Authentication**: InstantDB Auth with magic codes, Google OAuth, Apple Sign-In
+- **Real-time Database**: InstantDB with live queries
+- **Hosting**: Static files (can be deployed anywhere)
 
 ## Project Structure
 
 ```
-.
-├── index.html      # Main landing page
-├── app-builder.html # AI app builder interface
-├── styles.css      # Landing page styling
-├── builder.css     # App builder styling
-├── script.js       # Landing page interactions
-├── builder.js      # App builder functionality
-├── .gitignore      # Git ignore rules
-└── README.md       # This file
+/
+├── index.html              # Landing page
+├── dashboard.html          # User dashboard
+├── app-builder.html        # AI app builder interface
+├── package.json           # Project dependencies
+├── instant.schema.ts      # InstantDB data schema
+├── instant.perms.ts       # InstantDB permissions
+├── src/
+│   ├── instant.js        # InstantDB client initialization
+│   └── auth.js           # Authentication helpers
+├── styles/
+│   ├── styles.css        # Landing page styles
+│   ├── builder.css       # App builder styles
+│   └── dashboard.css     # Dashboard styles
+└── scripts/
+    ├── script.js         # Landing page logic
+    ├── builder.js        # App builder logic
+    └── dashboard.js      # Dashboard logic
 ```
 
-## Sections
+## Getting Started
 
-### Landing Page (`index.html`)
-- **Hero** - Eye-catching header with animated preview
-- **Features** - Highlighting key capabilities
-- **Examples** - Showcase of different app types
-- **How It Works** - 3-step process explanation
-- **Pricing** - Transparent pricing plans
-- **FAQ** - Common questions and answers
-- **CTA** - Multiple conversion points
-- **Login Modal** - Secure authentication with Google & Apple Sign-In
+### 1. InstantDB Setup
 
-### App Builder (`app-builder.html`)
-- **AI Model Selection** - Choose from GPT-5, Claude, Qwen 3 Coder, or Kimi K2
-- **Platform Selection** - Build for iOS, Android, and/or Web
-- **Feature Options** - Add authentication, database, API, payments, etc.
-- **Style Customization** - Select from multiple design themes
-- **Prompt Input** - Describe your app in natural language
-- **Voice Input** - Use voice commands to describe your app (Chrome/Edge)
-- **Example Prompts** - Quick start templates for common app types
-- **Real-time Generation** - See progress as AI builds your app
-- **Preview & Download** - View generated app summary and download code
+1. Go to [instantdb.com](https://www.instantdb.com) and create an account
+2. Create a new app - you'll get an App ID
+3. The App ID is already configured in this project: `1d7dcab3-cd11-4c0b-ad09-4b34f71c344c`
 
-## Authentication
+### 2. Push Schema and Permissions
 
-The login feature includes:
+```bash
+# Install InstantDB CLI globally
+npm install -g @instantdb/cli
 
-- **Google Sign-In** - OAuth integration ready
-- **Apple Sign-In** - Apple ID authentication ready
-- **Email/Password** - Traditional login form
-- **Remember Me** - Optional persistent login
-- **Forgot Password** - Password recovery link
+# Push the schema to your InstantDB app
+npx instant-cli@latest push schema
 
-### Setting Up Authentication (Production)
+# Push the permissions
+npx instant-cli@latest push perms
+```
 
-To enable authentication in production, you'll need to:
+### 3. Configure OAuth (Optional)
 
-1. **Google OAuth:**
-   - Get a Client ID from [Google Cloud Console](https://console.cloud.google.com)
-   - Configure OAuth consent screen
-   - Add authorized redirect URIs
-   - Update the Google login handler in `script.js`
+#### Google OAuth:
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create OAuth credentials
+3. Add to InstantDB dashboard under Auth settings
+4. Update the Google client ID in `scripts/script.js`
 
-2. **Apple Sign-In:**
-   - Register for [Apple Developer Program](https://developer.apple.com)
-   - Create a Service ID in Certificates, Identifiers & Profiles
-   - Configure domains and return URLs
-   - Update the Apple login handler in `script.js`
+#### Apple Sign-In:
+1. Go to [Apple Developer](https://developer.apple.com)
+2. Create Service ID
+3. Add to InstantDB dashboard under Auth settings
+4. Update the Apple client ID in `scripts/script.js`
 
-3. **Backend API:**
-   - Set up authentication endpoints (`/api/login`, `/api/register`, etc.)
-   - Implement JWT or session-based authentication
-   - Add password hashing and security measures
-   - Configure CORS and security headers
+### 4. Run Locally
 
-## App Builder
+```bash
+# Start a local server
+python3 -m http.server 8000
 
-The app builder (`app-builder.html`) provides a comprehensive interface for AI-powered app generation:
+# Or use any static file server
+# The app will be available at http://localhost:8000
+```
 
-### Features:
+### 5. Deploy
 
-1. **AI Model Selection:**
-   - GPT-5 (Most powerful, best for complex apps)
-   - Claude Sonnet (Excellent reasoning, great for UIs)
-   - Qwen 3 Coder (Fast coding, optimized performance)
-   - Kimi K2 (Balanced speed and quality)
+Deploy the static files to any hosting service:
+- Netlify
+- Vercel
+- GitHub Pages
+- AWS S3 + CloudFront
+- Any static hosting
 
-2. **Platform Targets:**
-   - iOS (React Native)
-   - Android (React Native)
-   - Web (React/Vue/vanilla JS)
+## Data Schema
 
-3. **Built-in Features:**
-   - User Authentication
-   - Database Integration
-   - REST API
-   - Real-time Updates
-   - Payment Integration
-   - Push Notifications
+### Users ($users)
+- email (string, unique)
+- name (string)
+- avatar (string)
+- plan (string: free/pro/enterprise)
+- createdAt (date)
 
-4. **Input Methods:**
-   - Text prompt with character counter
-   - Voice input (Chrome/Edge only - uses Web Speech API)
-   - Example prompts for quick start
+### Projects
+- userId (ref to $users)
+- title (string)
+- description (string)
+- prompt (string)
+- model (string: gpt5/claude/qwen/kimi)
+- platforms (json: array)
+- features (json: array)
+- style (string)
+- status (string: draft/generating/completed/failed)
+- createdAt, updatedAt (date)
 
-5. **Generation Process:**
-   - Real-time progress tracking
-   - Stage-by-stage status updates
-   - Visual progress bar
-   - Preview of generated app structure
+### Generations
+- projectId (ref to projects)
+- userId (ref to $users)
+- code (json: generated files)
+- preview (string)
+- generatedAt (date)
+- duration (number)
+- status (string)
 
-### Using Voice Input:
+### Analytics
+- userId (ref to $users)
+- eventType (string)
+- metadata (json)
+- timestamp (date)
 
-The voice input feature uses the browser's built-in speech recognition:
-- Only works in Chrome, Edge, and other Chromium-based browsers
-- Click the microphone icon to start/stop recording
-- Speak naturally - the AI will transcribe and add to your prompt
-- Works best in a quiet environment
+## Key Features
 
-### Example Prompts:
+### Authentication
+- **Magic Code Login**: Passwordless email authentication
+- **Google OAuth**: Sign in with Google account
+- **Apple Sign-In**: Sign in with Apple ID
+- **Session Management**: Persistent login across pages
+- **Protected Routes**: Dashboard and builder require authentication
 
-The builder includes pre-written examples for:
-- **Fitness Apps** - Workout tracking, goals, social features
-- **Finance Apps** - Expense tracking, budgets, charts
-- **Social Networks** - Profiles, groups, chat, feeds
-- **E-commerce** - Product browsing, cart, checkout, reviews
+### Dashboard
+- **Projects Grid**: View all your projects with thumbnails
+- **Stats Overview**: Total projects, generations, completed apps
+- **Search & Filter**: Find projects by name, status, date
+- **Real-time Updates**: Live sync with database changes
+- **Quick Actions**: Edit, delete, or open projects
+
+### App Builder
+- **AI Model Selection**: Choose from GPT-5, Claude, Qwen 3 Coder, Kimi K2
+- **Platform Targeting**: Build for iOS, Android, and/or Web
+- **Feature Configuration**: Add auth, database, API, payments, etc.
+- **Voice Input**: Describe your app using voice commands
+- **Auto-save**: Projects automatically save as drafts
+- **Real-time Generation**: Track build progress with live updates
+- **Project Management**: Save, load, and update projects
+
+### Analytics
+- Track user login/logout events
+- Monitor project creation and updates
+- Record app generation completion
+- Track feature usage and engagement
+
+## Permissions
+
+Projects, generations, and analytics are scoped to individual users:
+- Users can only view/edit their own projects
+- Users can only access their own generations
+- Users can only view their own analytics
+- All operations require authentication
+
+## Development
+
+### Adding New Features
+
+1. **Update Schema** (`instant.schema.ts`):
+   - Add new entities or attributes
+   - Define relationships
+   - Push changes: `npx instant-cli@latest push schema`
+
+2. **Update Permissions** (`instant.perms.ts`):
+   - Define access rules
+   - Set field-level permissions
+   - Push changes: `npx instant-cli@latest push perms`
+
+3. **Update Frontend**:
+   - Add UI components
+   - Integrate with InstantDB queries
+   - Track analytics events
+
+### Testing
+
+1. Test authentication flows (email, Google, Apple)
+2. Verify project CRUD operations
+3. Test real-time updates
+4. Validate permissions
+5. Test on mobile devices
+6. Cross-browser compatibility
+
+## Browser Support
+
+- Chrome/Edge (latest)
+- Firefox (latest)
+- Safari (latest)
+- Mobile browsers (iOS Safari, Chrome Mobile)
+
+**Note**: Voice input requires Chrome/Edge (uses Web Speech API)
+
+## Troubleshooting
+
+### Authentication Issues
+- Clear browser cache and cookies
+- Check InstantDB dashboard for auth errors
+- Verify OAuth credentials are correct
+- Ensure redirect URIs match your domain
+
+### Database Issues
+- Check browser console for errors
+- Verify InstantDB App ID is correct
+- Ensure schema is pushed to InstantDB
+- Check permissions are configured correctly
+
+### Real-time Sync Issues
+- Check network connection
+- Verify InstantDB is online
+- Check browser console for WebSocket errors
+
+## Environment Variables
+
+For production deployment, you may want to use environment variables:
+
+```bash
+INSTANT_APP_ID=1d7dcab3-cd11-4c0b-ad09-4b34f71c344c
+GOOGLE_CLIENT_ID=your-google-client-id
+APPLE_CLIENT_ID=your-apple-client-id
+```
+
+## Security
+
+- All data is scoped to authenticated users
+- Permissions enforced at database level
+- OAuth tokens handled securely by InstantDB
+- HTTPS required for production
+- CORS configured through InstantDB dashboard
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
 All rights reserved © 2026 LandingPageM
+
+## Support
+
+For issues or questions:
+- Check InstantDB documentation: https://www.instantdb.com/docs
+- Review the code comments
+- Check browser console for errors
+
+## Roadmap
+
+- [ ] Payment integration (Stripe)
+- [ ] Team collaboration features
+- [ ] Advanced analytics dashboard
+- [ ] Code export to GitHub
+- [ ] Deploy to hosting providers
+- [ ] Mobile app for iOS/Android
+- [ ] Real AI model integration
+- [ ] Template marketplace
+- [ ] Version history for projects
+- [ ] Comments and feedback system
+
+---
+
+Built with ❤️ using InstantDB

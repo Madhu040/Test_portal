@@ -1,0 +1,18 @@
+{
+  "name": "landingpagem",
+  "version": "1.0.0",
+  "description": "AI-powered app builder with InstantDB backend",
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 8000",
+    "push-schema": "npx instant-cli@latest push schema",
+    "push-perms": "npx instant-cli@latest push perms"
+  },
+  "dependencies": {
+    "@instantdb/core": "^0.13.0"
+  },
+  "devDependencies": {},
+  "keywords": ["instantdb", "ai", "app-builder"],
+  "author": "",
+  "license": "MIT"
+}
