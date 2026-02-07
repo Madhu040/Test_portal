@@ -1,5 +1,40 @@
 /* App Builder Specific Styles */
 
+.back-button-container {
+    max-width: 1400px;
+    margin: 0 auto 1rem;
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 0.75rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+}
+
+.back-button:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateX(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.back-button svg {
+    transition: transform 0.2s;
+}
+
+.back-button:hover svg {
+    transform: translateX(-3px);
+}
+
 .builder-container {
     min-height: 100vh;
     background: linear-gradient(180deg, #f9fafb 0%, #ffffff 50%, #f9fafb 100%);
