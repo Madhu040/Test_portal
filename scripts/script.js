@@ -239,6 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Check if Auth is available
             if (typeof Auth === 'undefined') {
+                alert('Authentication system not loaded. Please refresh the page.');
                 showAuthMessage('Authentication system not loaded. Please refresh the page.', 'error');
                 return;
             }
@@ -247,12 +248,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const config = window.OAuthConfig?.google;
             
             if (!config || !config.enabled) {
-                showAuthMessage('Google OAuth not configured yet. See SIMPLE_OAUTH_SETUP.md', 'warning');
+                alert('Google Sign-In Setup Required!\n\nGoogle OAuth is not configured yet.\n\nTo enable Google Sign-In:\n1. Follow the guide in GOOGLE_SIGNIN_SETUP.md\n2. Or use Email login below (works without setup!)');
+                showAuthMessage('Google OAuth not configured. Use email login below or see GOOGLE_SIGNIN_SETUP.md', 'warning');
                 console.log('To enable: Edit config/oauth-config.js and set google.enabled = true');
                 return;
             }
             
             if (!config.clientId || config.clientId.includes('YOUR_')) {
+                alert('Google Sign-In Setup Required!\n\nPlease add your Google Client ID to config/oauth-config.js\n\nSee GOOGLE_SIGNIN_SETUP.md for instructions.');
                 showAuthMessage('Please add your Google Client ID to config/oauth-config.js', 'error');
                 return;
             }
