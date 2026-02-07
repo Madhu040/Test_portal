@@ -180,6 +180,21 @@ Try signing up with your email - you'll get a magic code to verify!
 
 ## 🚀 Run This Now
 
+### ⚠️ First: Install Node.js (if not already installed)
+
+The schema push commands require Node.js. Check if you have it:
+
+```bash
+node --version
+```
+
+**If you don't have Node.js:**
+- Download from: https://nodejs.org/ (choose LTS version)
+- Or see: `NODEJS_INSTALL_REQUIRED.md` for detailed instructions
+- Takes 5 minutes to install
+
+### Then: Push Schema
+
 ```bash
 cd /Users/madhu/Downloads/Cursor_folder
 
@@ -187,8 +202,10 @@ cd /Users/madhu/Downloads/Cursor_folder
 npx @instantdb/cli@latest push schema --app 1d7dcab3-cd11-4c0b-ad09-4b34f71c344c
 npx @instantdb/cli@latest push perms --app 1d7dcab3-cd11-4c0b-ad09-4b34f71c344c
 
-# Test
+# Test (server is already running!)
 open http://localhost:8000/test-auth.html
 ```
 
 **Your app will work in 5 minutes!** 🎉
+
+**Alternative:** Use InstantDB web dashboard instead of CLI (see `NODEJS_INSTALL_REQUIRED.md`)
