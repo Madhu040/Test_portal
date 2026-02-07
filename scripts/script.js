@@ -236,22 +236,52 @@ document.addEventListener('DOMContentLoaded', function() {
     if (googleLoginBtn) {
         googleLoginBtn.addEventListener('click', async function() {
             console.log('Google login initiated');
-            showAuthMessage('Google OAuth needs to be configured in InstantDB dashboard', 'info');
             
-            // In production with configured OAuth:
-            // google.accounts.id.initialize({
-            //     client_id: 'YOUR_GOOGLE_CLIENT_ID',
-            //     callback: async (response) => {
-            //         const result = await Auth.signInWithGoogle(response.credential);
-            //         if (result.success) {
-            //             loginModal.classList.remove('active');
-            //             document.body.style.overflow = 'auto';
-            //         } else {
-            //             showAuthMessage(result.error, 'error');
-            //         }
-            //     }
-            // });
-            // google.accounts.id.prompt();
+            // Check if Auth is available
+            if (typeof Auth === 'undefined') {
+                showAuthMessage('Authentication system not loaded. Please refresh the page.', 'error');
+                return;
+            }
+            
+            // Note: Google OAuth requires configuration in InstantDB dashboard
+            // See OAUTH_SETUP.md for complete setup instructions
+            
+            showAuthMessage('Google OAuth needs to be configured. See OAUTH_SETUP.md for instructions.', 'info');
+            
+            // Production implementation (uncomment after configuration):
+            /*
+            const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+            
+            if (typeof google !== 'undefined' && google.accounts) {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: async (response) => {
+                        console.log('Google response received:', response);
+                        showAuthMessage('Signing in with Google...', 'info');
+                        
+                        try {
+                            const result = await Auth.signInWithGoogle(response.credential);
+                            if (result.success) {
+                                showAuthMessage('Login successful!', 'success');
+                                setTimeout(() => {
+                                    loginModal.classList.remove('active');
+                                    document.body.style.overflow = 'auto';
+                                    resetAuthForm();
+                                }, 1000);
+                            } else {
+                                showAuthMessage(result.error || 'Google login failed', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Google auth error:', error);
+                            showAuthMessage('Error signing in with Google', 'error');
+                        }
+                    }
+                });
+                google.accounts.id.prompt();
+            } else {
+                showAuthMessage('Google Sign-In library not loaded', 'error');
+            }
+            */
         });
     }
 
@@ -259,21 +289,54 @@ document.addEventListener('DOMContentLoaded', function() {
     if (appleLoginBtn) {
         appleLoginBtn.addEventListener('click', async function() {
             console.log('Apple login initiated');
-            showAuthMessage('Apple Sign-In needs to be configured in InstantDB dashboard', 'info');
             
-            // In production with configured OAuth:
-            // AppleID.auth.init({
-            //     clientId: 'YOUR_APPLE_CLIENT_ID',
-            //     scope: 'name email',
-            //     redirectURI: window.location.origin,
-            //     usePopup: true
-            // });
-            // const response = await AppleID.auth.signIn();
-            // const result = await Auth.signInWithApple(response.authorization.id_token);
-            // if (result.success) {
-            //     loginModal.classList.remove('active');
-            //     document.body.style.overflow = 'auto';
-            // }
+            // Check if Auth is available
+            if (typeof Auth === 'undefined') {
+                showAuthMessage('Authentication system not loaded. Please refresh the page.', 'error');
+                return;
+            }
+            
+            // Note: Apple Sign-In requires configuration in InstantDB dashboard
+            // See OAUTH_SETUP.md for complete setup instructions
+            
+            showAuthMessage('Apple Sign-In needs to be configured. See OAUTH_SETUP.md for instructions.', 'info');
+            
+            // Production implementation (uncomment after configuration):
+            /*
+            const APPLE_CLIENT_ID = 'com.landingpagem.web';
+            
+            if (typeof AppleID !== 'undefined') {
+                try {
+                    AppleID.auth.init({
+                        clientId: APPLE_CLIENT_ID,
+                        scope: 'name email',
+                        redirectURI: window.location.origin + '/apple-callback',
+                        usePopup: true
+                    });
+                    
+                    const response = await AppleID.auth.signIn();
+                    console.log('Apple response received:', response);
+                    showAuthMessage('Signing in with Apple...', 'info');
+                    
+                    const result = await Auth.signInWithApple(response.authorization.id_token);
+                    if (result.success) {
+                        showAuthMessage('Login successful!', 'success');
+                        setTimeout(() => {
+                            loginModal.classList.remove('active');
+                            document.body.style.overflow = 'auto';
+                            resetAuthForm();
+                        }, 1000);
+                    } else {
+                        showAuthMessage(result.error || 'Apple login failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('Apple auth error:', error);
+                    showAuthMessage('Error signing in with Apple', 'error');
+                }
+            } else {
+                showAuthMessage('Apple Sign-In library not loaded', 'error');
+            }
+            */
         });
     }
 

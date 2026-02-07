@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test - LandingPageM</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- InstantDB -->
+    <script src="https://cdn.jsdelivr.net/npm/@instantdb/core@latest/dist/index.umd.js"></script>
+    <script src="src/instant.js"></script>
+    <script src="src/auth.js"></script>
+    <style>
+        body {
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .test-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 2px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #6366f1;
+        }
+        .status {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+        .status.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #f59e0b;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #3b82f6;
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        input {
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            width: 100%;
+            margin: 0.5rem 0;
+            font-size: 1rem;
+        }
+        input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        .test-result {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 2rem;
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Home</a>
+    
+    <h1>Authentication System Test</h1>
+    
+    <div class="test-section">
+        <h2>1. InstantDB Connection Test</h2>
+        <p>Testing connection to InstantDB with App ID: <code>1d7dcab3-cd11-4c0b-ad09-4b34f71c344c</code></p>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connectionStatus"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Email Magic Code Test</h2>
+        <p>Test sending and verifying magic codes</p>
+        <input type="email" id="testEmail" placeholder="Enter your email">
+        <br>
+        <button onclick="testSendMagicCode()">Send Magic Code</button>
+        <div id="magicCodeStatus"></div>
+        
+        <div id="verifySection" style="display: none; margin-top: 1rem;">
+            <input type="text" id="testCode" placeholder="Enter 6-digit code" maxlength="6">
+            <br>
+            <button onclick="testVerifyCode()">Verify Code</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Current User Test</h2>
+        <p>Check if user is authenticated</p>
+        <button onclick="testCurrentUser()">Check Auth State</button>
+        <button onclick="testSignOut()">Sign Out</button>
+        <div id="userStatus"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Google OAuth Test</h2>
+        <p>Test Google Sign-In integration</p>
+        <div id="googleStatus" class="status info">
+            <strong>Status:</strong> Configuration needed in InstantDB dashboard<br>
+            See OAUTH_SETUP.md for instructions
+        </div>
+        <button onclick="testGoogleOAuth()">Test Google Login</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Apple Sign-In Test</h2>
+        <p>Test Apple authentication integration</p>
+        <div id="appleStatus" class="status info">
+            <strong>Status:</strong> Configuration needed in InstantDB dashboard<br>
+            Requires Apple Developer account ($99/year)<br>
+            See OAUTH_SETUP.md for instructions
+        </div>
+        <button onclick="testAppleSignIn()">Test Apple Login</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Console Logs</h2>
+        <p>Open browser console (F12 or Cmd+Option+I) to see detailed logs</p>
+        <div id="consoleOutput" class="test-result"></div>
+    </div>
+
+    <script>
+        let testEmail = '';
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+        
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        async function testConnection() {
+            log('Testing InstantDB connection...');
+            showStatus('connectionStatus', 'Testing connection...', 'info');
+            
+            try {
+                if (typeof InstantDB === 'undefined') {
+                    throw new Error('InstantDB SDK not loaded from CDN');
+                }
+                
+                const client = window.InstantDBClient?.getDB();
+                if (!client) {
+                    throw new Error('InstantDB client not initialized');
+                }
+                
+                log('✅ InstantDB client initialized successfully');
+                showStatus('connectionStatus', '✅ Connection successful! InstantDB is ready.', 'success');
+            } catch (error) {
+                log('❌ Connection failed: ' + error.message);
+                showStatus('connectionStatus', '❌ Connection failed: ' + error.message, 'error');
+            }
+        }
+        
+        async function testSendMagicCode() {
+            const email = document.getElementById('testEmail').value.trim();
+            testEmail = email;
+            
+            if (!email) {
+                showStatus('magicCodeStatus', 'Please enter an email address', 'error');
+                return;
+            }
+            
+            log(`Sending magic code to ${email}...`);
+            showStatus('magicCodeStatus', 'Sending magic code...', 'info');
+            
+            try {
+                if (typeof Auth === 'undefined') {
+                    throw new Error('Auth module not loaded');
+                }
+                
+                const result = await Auth.signInWithEmail(email);
+                
+                if (result.success) {
+                    log('✅ Magic code sent successfully');
+                    showStatus('magicCodeStatus', `✅ ${result.message}<br><br>Check your email and enter the code below.`, 'success');
+                    document.getElementById('verifySection').style.display = 'block';
+                } else {
+                    log('❌ Failed to send magic code: ' + result.error);
+                    showStatus('magicCodeStatus', '❌ Failed: ' + result.error + '<br><br>Did you push the schema to InstantDB?', 'error');
+                }
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                showStatus('magicCodeStatus', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function testVerifyCode() {
+            const code = document.getElementById('testCode').value.trim();
+            
+            if (!code) {
+                showStatus('magicCodeStatus', 'Please enter the verification code', 'error');
+                return;
+            }
+            
+            if (!testEmail) {
+                showStatus('magicCodeStatus', 'Please send magic code first', 'error');
+                return;
+            }
+            
+            log(`Verifying code ${code} for ${testEmail}...`);
+            showStatus('magicCodeStatus', 'Verifying code...', 'info');
+            
+            try {
+                const result = await Auth.verifyMagicCode(testEmail, code);
+                
+                if (result.success) {
+                    log('✅ Code verified! User is now authenticated');
+                    showStatus('magicCodeStatus', '✅ Login successful! Code verified.', 'success');
+                    document.getElementById('verifySection').style.display = 'none';
+                    document.getElementById('testCode').value = '';
+                } else {
+                    log('❌ Invalid code: ' + result.error);
+                    showStatus('magicCodeStatus', '❌ Invalid code: ' + result.error, 'error');
+                }
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                showStatus('magicCodeStatus', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function testCurrentUser() {
+            log('Checking current user...');
+            
+            try {
+                if (typeof Auth === 'undefined') {
+                    throw new Error('Auth module not loaded');
+                }
+                
+                const user = Auth.getCurrentUser();
+                
+                if (user) {
+                    log('✅ User is authenticated');
+                    showStatus('userStatus', 
+                        `✅ Authenticated!<br><br><strong>User Details:</strong><br>` +
+                        `Email: ${user.email || 'N/A'}<br>` +
+                        `ID: ${user.id || 'N/A'}<br>` +
+                        `Refresh token: ${user.refresh_token ? 'Present' : 'Not available'}`, 
+                        'success'
+                    );
+                } else {
+                    log('ℹ️ No user is currently authenticated');
+                    showStatus('userStatus', 'ℹ️ Not authenticated. Please log in using magic code above.', 'info');
+                }
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                showStatus('userStatus', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function testSignOut() {
+            log('Signing out...');
+            
+            try {
+                if (typeof Auth === 'undefined') {
+                    throw new Error('Auth module not loaded');
+                }
+                
+                await Auth.signOut();
+                log('✅ Signed out successfully');
+                showStatus('userStatus', '✅ Signed out successfully', 'success');
+                document.getElementById('verifySection').style.display = 'none';
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                showStatus('userStatus', '❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function testGoogleOAuth() {
+            log('Testing Google OAuth...');
+            showStatus('googleStatus', 
+                'Google OAuth requires configuration.<br><br>' +
+                '<strong>Steps needed:</strong><br>' +
+                '1. Set up OAuth in Google Cloud Console<br>' +
+                '2. Configure in InstantDB dashboard (Auth → Google)<br>' +
+                '3. Add Client ID to scripts/script.js<br><br>' +
+                'See OAUTH_SETUP.md for detailed instructions', 
+                'warning'
+            );
+        }
+        
+        async function testAppleSignIn() {
+            log('Testing Apple Sign-In...');
+            showStatus('appleStatus', 
+                'Apple Sign-In requires configuration.<br><br>' +
+                '<strong>Steps needed:</strong><br>' +
+                '1. Apple Developer account ($99/year)<br>' +
+                '2. Create Service ID and configure<br>' +
+                '3. Configure in InstantDB dashboard (Auth → Apple)<br>' +
+                '4. Add credentials to scripts/script.js<br><br>' +
+                'See OAUTH_SETUP.md for detailed instructions', 
+                'warning'
+            );
+        }
+        
+        // Auto-test connection on load
+        window.addEventListener('load', function() {
+            log('Page loaded, running auto-tests...');
+            setTimeout(() => {
+                testConnection();
+                testCurrentUser();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
