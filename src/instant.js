@@ -10,14 +10,22 @@ let db = null;
 
 // Initialize the database
 function initDB() {
-  if (typeof InstantDB === 'undefined') {
-    console.error('InstantDB not loaded. Make sure to include the CDN script.');
+  // Check if InstantDB is loaded from CDN
+  if (typeof window.InstantDB === 'undefined') {
+    console.error('InstantDB not loaded from CDN. Check script tag.');
     return null;
   }
   
   if (!db) {
-    db = InstantDB({ appId: APP_ID });
-    console.log('InstantDB initialized successfully');
+    try {
+      // Initialize with the correct syntax
+      db = window.InstantDB({ appId: APP_ID });
+      console.log('✓ InstantDB initialized successfully');
+      console.log('✓ App ID:', APP_ID);
+    } catch (error) {
+      console.error('Failed to initialize InstantDB:', error);
+      return null;
+    }
   }
   
   return db;
@@ -38,9 +46,22 @@ window.InstantDBClient = {
   APP_ID
 };
 
-// Auto-initialize on load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initDB);
-} else {
+// Auto-initialize on load with better error handling
+function initialize() {
+  console.log('Initializing InstantDB...');
+  
+  // Wait a bit for CDN to load
+  if (typeof window.InstantDB === 'undefined') {
+    console.log('InstantDB not loaded yet, retrying...');
+    setTimeout(initialize, 100);
+    return;
+  }
+  
   initDB();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialize);
+} else {
+  initialize();
 }
